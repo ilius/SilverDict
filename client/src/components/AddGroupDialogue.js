@@ -38,7 +38,7 @@ export function AddGroupDialogue(props) {
 				setNewGroupLang('');
 			})
 			.catch((error) => {
-				alert('Failed to add group.');
+				alert('Failed to add group: '+error);
 			})
 			.finally(() => {
 				setDialogueOpened(false);
