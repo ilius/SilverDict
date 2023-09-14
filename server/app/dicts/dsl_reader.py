@@ -8,7 +8,7 @@ from pathlib import Path
 from .. import db_manager
 from . import idzip
 from .base_reader import BaseReader
-from .dsl import DSLConverter
+from .dsl.markup_converter import DSLConverter
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
