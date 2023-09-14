@@ -1,15 +1,16 @@
-import struct
-import zlib
-import os
-import shutil
-from pathlib import Path
-import re
-from .base_reader import BaseReader
-from .. import db_manager
-from .mdict.readmdict import MDX, MDD
-from .mdict import lzo
 # import css_inline
 import logging
+import os
+import re
+import shutil
+import struct
+import zlib
+from pathlib import Path
+
+from .. import db_manager
+from .base_reader import BaseReader
+from .mdict import lzo
+from .mdict.readmdict import MDD, MDX
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -30,9 +31,7 @@ class MDictReader(BaseReader):
 				 display_name: 'str',
 				 extract_resources: 'bool'=True,
 				 remove_resources_after_extraction: 'bool'=False) -> 'None':
-		"""
-		It is recommended to set remove_resources_after_extraction to True on a server when you have local backup.
-		"""
+		"""It is recommended to set remove_resources_after_extraction to True on a server when you have local backup."""
 		super().__init__(name, filename, display_name)
 
 		self._mdict = MDX(filename)
@@ -68,7 +67,7 @@ class MDictReader(BaseReader):
 			while os.path.isfile('%s%d.mdd' % (mdd_base_filename, i)):
 				resources.append(MDD('%s%d.mdd' % (mdd_base_filename, i)))
 				i += 1
-			
+
 			# Extract resource files into cache directory
 			for mdd in resources:
 				for resource_filename, resource_file in mdd.items():
@@ -76,7 +75,7 @@ class MDictReader(BaseReader):
 					if resource_filename.startswith('/'):
 						resource_filename = resource_filename[1:]
 					self._write_to_cache_dir(os.path.join(self._relative_root_dir, resource_filename), resource_file)
-			
+
 			if remove_resources_after_extraction:
 				for mdd in resources:
 					os.remove(mdd._fname)
@@ -172,7 +171,7 @@ class MDictReader(BaseReader):
 			return record_null
 		else:
 			return record_null.strip().decode(md._encoding)
-	
+
 	def _fix_file_path(self, definition_html: 'str', file_extension: 'str') -> 'str':
 		extension_position = 0
 		while (extension_position := definition_html.find(file_extension, extension_position)) != -1:
@@ -191,7 +190,7 @@ class MDictReader(BaseReader):
 				definition_html = definition_html[:filename_position] + self._href_root_dir + definition_html[filename_position:]
 			extension_position += len(file_extension)
 		return definition_html
-	
+
 	# def _inline_styles(self, html_content: 'str') -> 'str': # CSS path(s) is inside the HTML file
 	# 	# Find all CSS references
 	# 	# regex won't work. Maybe it's simply because that I haven't mastered the dark art.
@@ -206,7 +205,7 @@ class MDictReader(BaseReader):
 	# 		link_tag_end_position = html_content.find('>', link_tag_start_position) + 1
 	# 		html_content = html_content[:link_tag_start_position] + html_content[link_tag_end_position:]
 	# 		css_extension_position = link_tag_start_position
-		
+
 	# 	for css in css_references:
 	# 		# Read the CSS file
 	# 		css_path = os.path.join(self._resources_dir, css.split('/')[-1])
@@ -216,13 +215,13 @@ class MDictReader(BaseReader):
 	# 		# Inline the CSS
 	# 		inliner = css_inline.CSSInliner(load_remote_stylesheets=False, extra_css=css_content)
 	# 		html_content = inliner.inline(html_content)
-		
+
 	# 	return html_content
-	
+
 	def _fix_internal_href(self, definition_html: 'str') -> 'str':
 		# That is, links like entry://#81305a5747ca42b28f2b50de9b762963_nav2
 		return definition_html.replace('entry://#', '#')
-	
+
 	def _flatten_nested_a(self, definition_html: 'str', depth: 'int') -> 'str':
 		# Sometimes there're multiple inner elements inside the <a> element, which should be removed
 		# For example, in my Fr-En En-Fr Collins Dictionary, there's a <span> element inside the <a> element
@@ -242,18 +241,18 @@ class MDictReader(BaseReader):
 				a_closing_tag_pos = definition_html.find('</a>', inner_html_end_pos)
 				definition_html = definition_html[:a_tag_end_pos + 1] + inner_html + definition_html[a_closing_tag_pos:]
 			return self._flatten_nested_a(definition_html, depth - 1)
-	
+
 	def _fix_entry_cross_ref(self, definition_html: 'str') -> 'str':
 		if definition_html.startswith('@@@LINK='): # strange special case
 			last_non_whitespace_position = len(definition_html) - 1
 			while definition_html[last_non_whitespace_position].isspace():
 				last_non_whitespace_position -= 1
 			entry_linked = definition_html[len('@@@LINK='):last_non_whitespace_position+1]
-			return '<a href="%s">%s</a>' % (self._lookup_url_root + entry_linked, entry_linked)
+			return f'<a href="{self._lookup_url_root + entry_linked}">{entry_linked}</a>'
 		else:
 			definition_html = definition_html.replace('entry://', self._lookup_url_root)
 			return self._flatten_nested_a(definition_html, 3) # fingers crossed there are no more than three layers
-	
+
 	def _fix_sound_link(self, definition_html: 'str') -> 'str':
 		# Use HTML sound element instead of the original <a> element, which looks like this:
 		# <a class="hwd_sound sound audio_play_button icon-volume-up ptr fa fa-volume-up" data-lang="en_GB" data-src-mp3="https://www.collinsdictionary.com/sounds/hwd_sounds/EN-GB-W0020530.mp3" href="sound://audio/ef/7650.mp3" title="Pronunciation for "><img class="soundpng" src="/api/cache/collinse22f/img/sound.png"></a>
@@ -272,7 +271,7 @@ class MDictReader(BaseReader):
 			autoplay_string = ''
 
 		return definition_html
-	
+
 	def _fix_img_src(self, definition_html: 'str') -> 'str':
 		img_tag_end_pos = 0
 		while (img_tag_start_pos := definition_html.find('<img', img_tag_end_pos)) != -1:
@@ -283,7 +282,7 @@ class MDictReader(BaseReader):
 			img_src = self._href_root_dir + img_src.replace('file://' , '')
 			definition_html = definition_html[:img_src_start_pos] + img_src + definition_html[img_src_end_pos:]
 		return definition_html
-	
+
 	def entry_definition(self, entry: 'str') -> 'str':
 		locations = db_manager.get_entries(entry, self.name)
 		records = []

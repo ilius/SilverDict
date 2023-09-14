@@ -1,7 +1,7 @@
 import math
 
 
-class FlexBuffer():
+class FlexBuffer:
 
 	def __init__(self):
 
@@ -11,7 +11,7 @@ class FlexBuffer():
 		self.buf = None
 
 	def require(self, n):
-		
+
 		r = self.c - self.l + n
 		if r > 0:
 			self.l = self.l + self.blockSize * math.ceil(r / self.blockSize)
@@ -24,11 +24,8 @@ class FlexBuffer():
 		return self.buf
 
 	def alloc(self, initSize, blockSize):
-		
-		if blockSize:
-			sz = blockSize
-		else:
-			sz = 4096
+
+		sz = blockSize if blockSize else 4096
 		self.blockSize = self.roundUp(sz)
 		self.c = 0
 		self.l = self.roundUp(initSize) | 0
@@ -37,7 +34,7 @@ class FlexBuffer():
 		return self.buf
 
 	def roundUp(self, n):
-		
+
 		r = n % 4
 		if r == 0:
 			return n
@@ -50,7 +47,7 @@ class FlexBuffer():
 		self.l = len(self.buf)
 
 	def pack(self, size):
-		
+
 		return self.buf[0:size]
 
 def _decompress(inBuf, outBuf):
@@ -191,7 +188,7 @@ def _decompress(inBuf, outBuf):
 					if not t > 0: break
 			#emulate c switch
 			state = c_copy_match
-		
+
 		##
 		if state == c_copy_match:
 			if not if_block:
@@ -205,7 +202,7 @@ def _decompress(inBuf, outBuf):
 					if not t > 0: break
 			#emulating c switch
 			state = c_match_done
- 
+
 		##
 		if state == c_match_done:
 			t = inBuf[ip - 2] & 3

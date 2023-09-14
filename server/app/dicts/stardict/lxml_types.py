@@ -16,9 +16,10 @@ from typing import (
 	TypeAlias,
 )
 
-from lxml.etree import QName, _Element
-
 from .interfaces import Interface
+
+if typing.TYPE_CHECKING:
+	from lxml.etree import QName, _Element
 
 _TextArg: TypeAlias = "str | bytes | QName"
 _TagName: TypeAlias = _TextArg

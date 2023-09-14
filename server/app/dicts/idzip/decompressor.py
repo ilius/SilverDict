@@ -1,10 +1,10 @@
+import itertools
 import os
 import struct
 import zlib
-import itertools
 from io import BytesIO, open
 
-from . import compressor, caching
+from . import caching, compressor
 from ._stream import IOStreamWrapperMixin
 
 GZIP_CRC32_LEN = 4
@@ -41,7 +41,8 @@ class IdzipReader(IOStreamWrapperMixin):
 		return self._fileobj
 
 	def _read_member_header(self):
-		"""Extends self._members and self._chunks
+		"""
+		Extends self._members and self._chunks
 		by the read header data.
 		"""
 		header = _read_gzip_header(self._fileobj)
@@ -52,7 +53,7 @@ class IdzipReader(IOStreamWrapperMixin):
 					self.stream.seek(0)
 			except AttributeError:
 				pass
-			raise IOError("Not an idzip file: %r" % self.name)
+			raise OSError("Not an idzip file: %r" % self.name)
 
 		dictzip_field = _parse_dictzip_field(header["extra_field"]["RA"])
 		num_member_chunks = len(dictzip_field["zlengths"])
@@ -77,7 +78,8 @@ class IdzipReader(IOStreamWrapperMixin):
 			sure_size))
 
 	def read(self, size=-1):
-		"""Reads the given number of bytes.
+		"""
+		Reads the given number of bytes.
 		It returns less bytes if EOF was reached.
 
 		A negative size means unlimited reading.
@@ -131,8 +133,10 @@ class IdzipReader(IOStreamWrapperMixin):
 		return line
 
 	def flush(self):
-		"""No-op, but needed by IdzipFile.flush(), which is called
-		if wrapped in TextIOWrapper."""
+		"""
+		No-op, but needed by IdzipFile.flush(), which is called
+		if wrapped in TextIOWrapper.
+		"""
 		pass
 
 	def close(self):
@@ -141,7 +145,8 @@ class IdzipReader(IOStreamWrapperMixin):
 		self._cache = None
 
 	def _index_pos(self, pos):
-		"""Returns (chunk_index, remainder) index
+		"""
+		Returns (chunk_index, remainder) index
 		for the given position in uncompressed data.
 		"""
 		member = self._select_member(pos)
@@ -153,7 +158,8 @@ class IdzipReader(IOStreamWrapperMixin):
 		return (chunk_index, remainder)
 
 	def _select_member(self, pos):
-		"""Returns a member that covers the given pos.
+		"""
+		Returns a member that covers the given pos.
 
 		If the pos is after the EOF, the last member is returned.
 		The EOF will be hit when reading from it.
@@ -176,8 +182,7 @@ class IdzipReader(IOStreamWrapperMixin):
 			return self._members[-1]
 
 	def _readchunk(self, chunk_index):
-		"""Reads the specified chunk or throws EOFError.
-		"""
+		"""Reads the specified chunk or throws EOFError."""
 		chunk = self._cache.get(chunk_index)
 		if chunk is not None:
 			return chunk
@@ -201,8 +206,7 @@ class IdzipReader(IOStreamWrapperMixin):
 		self._read_member_header()
 
 	def _reach_member_end(self):
-		"""Seeks the _fileobj at the end of the last known member.
-		"""
+		"""Seeks the _fileobj at the end of the last known member."""
 		self._fileobj.seek(self._last_zstream_end)
 
 		# The zlib stream could end with an empty block.
@@ -213,7 +217,7 @@ class IdzipReader(IOStreamWrapperMixin):
 
 		extra += deobj.flush()
 		if extra != b"":
-			raise IOError("Found extra compressed data after chunks.")
+			raise OSError("Found extra compressed data after chunks.")
 
 		self._fileobj.seek(GZIP_CRC32_LEN - len(deobj.unused_data),
 				os.SEEK_CUR)
@@ -238,13 +242,13 @@ class IdzipReader(IOStreamWrapperMixin):
 		self._pos = new_pos
 
 	def __repr__(self):
-		return "<idzip %s file %r at %s>" % (
+		return "<idzip {} file {!r} at {}>".format(
 			"open" if not self.closed else "closed",
 			self.name,
 			hex(id(self)))
 
 
-class _Member(object):
+class _Member:
 	def __init__(self, chlen, start_pos, start_chunk_index, sure_size):
 		self.chlen = chlen
 		self.start_pos = start_pos
@@ -258,20 +262,21 @@ class _Member(object):
 
 
 def _read_gzip_header(input):
-	"""Returns a parsed gzip header.
+	"""
+	Returns a parsed gzip header.
 	The position of the input is advanced beyond the header.
 	EOFError is thrown if there is not enough of data for the header.
 	"""
 	header = {
-			"extra_field": {}
+			"extra_field": {},
 			}
 
 	magic, flags, mtime = struct.unpack("<3sBIxx", _read_exactly(input, 10))
 	if magic != compressor.GZIP_DEFLATE_ID:
-		raise IOError("Not a gzip-deflate file.")
+		raise OSError("Not a gzip-deflate file.")
 
 	if compressor.FRESERVED & flags:
-		raise IOError("Unknown reserved flags: %s" % flags)
+		raise OSError("Unknown reserved flags: %s" % flags)
 
 	if compressor.FEXTRA & flags:
 		xlen = _read16(input)
@@ -299,22 +304,21 @@ def _read_exactly(input, size):
 
 
 def _read16(input):
-	"""Reads next two bytes as an unsigned integer.
-	"""
+	"""Reads next two bytes as an unsigned integer."""
 	return struct.unpack("<H", _read_exactly(input, 2))[0]
 
 def _read32(input):
-	"""Reads next four bytes as an unsigned integer.
-	"""
+	"""Reads next four bytes as an unsigned integer."""
 	return struct.unpack("<I", _read_exactly(input, 4))[0]
 
 def _split_subfields(extra_field):
-	"""Returns a dict with {sub_id: subfield_data} entries.
+	"""
+	Returns a dict with {sub_id: subfield_data} entries.
 	The extra field contains a variable number of bytes
 	for each subfields:
 	+---+---+---+---+===============================+
 	|SUB_ID |  LEN  | LEN bytes of subfield data ...|
-	+---+---+---+---+===============================+
+	+---+---+---+---+===============================+.
 	"""
 	input = BytesIO(extra_field)
 	sub_fields = {}
@@ -329,8 +333,7 @@ def _split_subfields(extra_field):
 
 
 def _skip_cstring(input):
-	"""Reads and discards a zero-terminated string.
-	"""
+	"""Reads and discards a zero-terminated string."""
 	while True:
 		c = input.read(1)
 		if not c or c == b"\0":
@@ -338,7 +341,8 @@ def _skip_cstring(input):
 
 
 def _parse_dictzip_field(subfield):
-	"""Returns a dict with:
+	"""
+	Returns a dict with:
 		chlen ... length of each uncompressed chunk,
 		zlengths ... lengths of compressed chunks.
 
@@ -350,13 +354,13 @@ def _parse_dictzip_field(subfield):
 	input = BytesIO(subfield)
 	ver, chlen, chunk_count = struct.unpack("<HHH", input.read(6))
 	if ver != 1:
-		raise IOError("Unsupported dictzip version: %s" % ver)
+		raise OSError("Unsupported dictzip version: %s" % ver)
 
 	zlengths = []
 	for i in range(chunk_count):
 		zlengths.append(_read16(input))
 
-	return dict(chlen=chlen, zlengths=zlengths)
+	return {'chlen': chlen, 'zlengths': zlengths}
 
 
 IdzipFile = IdzipReader

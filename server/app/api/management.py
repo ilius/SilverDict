@@ -1,12 +1,13 @@
-from flask import current_app, request, Response
-from .utils import make_yaml_response, parse_yaml
+from flask import Response, current_app, request
+
 from . import api
+from .utils import make_yaml_response, parse_yaml
+
 
 @api.route('/management/formats')
 def get_formats() -> 'Response':
 	dicts = current_app.extensions['dictionaries']
-	response = make_yaml_response(list(dicts.settings.SUPPORTED_DICTIONARY_FORMATS.keys()))
-	return response
+	return make_yaml_response(list(dicts.settings.SUPPORTED_DICTIONARY_FORMATS.keys()))
 
 @api.route('/management/dictionaries', methods=['GET', 'POST', 'DELETE', 'PUT'])
 def dictionaries() -> 'Response':
@@ -20,7 +21,7 @@ def dictionaries() -> 'Response':
 		dicts.settings.add_dictionary_to_group(dictionary_info['dictionary_name'], group_name)
 		response = make_yaml_response({
 			'dictionaries': dicts.settings.dictionaries_list,
-			'groupings': dicts.settings.get_dictionary_groupings()
+			'groupings': dicts.settings.get_dictionary_groupings(),
 		})
 	elif request.method == 'DELETE':
 		dictionary_name = parse_yaml(request.get_data())['name']
@@ -28,7 +29,7 @@ def dictionaries() -> 'Response':
 		dicts.remove_dictionary(dictionary_info)
 		response = make_yaml_response({
 			'dictionaries': dicts.settings.dictionaries_list,
-			'groupings': dicts.settings.get_dictionary_groupings()
+			'groupings': dicts.settings.get_dictionary_groupings(),
 		})
 	elif request.method == 'PUT': # Should only be used to reorder dictionaries
 		dictionaries_info = parse_yaml(request.get_data())
@@ -43,8 +44,7 @@ def change_dictionary_name() -> 'Response':
 	dicts = current_app.extensions['dictionaries']
 	info = parse_yaml(request.get_data())
 	dicts.settings.change_dictionary_display_name(info['name'], info['display'])
-	response = make_yaml_response({'success': True})
-	return response
+	return make_yaml_response({'success': True})
 
 @api.route('/management/sources', methods=['GET', 'POST', 'DELETE'])
 def sources() -> 'Response':
@@ -68,11 +68,10 @@ def scan_sources() -> 'Response':
 	dicts = current_app.extensions['dictionaries']
 	for dictionary_info in dicts.settings.scan_sources():
 		dicts.add_dictionary(dictionary_info)
-	response = make_yaml_response({
+	return make_yaml_response({
 		'dictionaries': dicts.settings.dictionaries_list,
-		'groupings': dicts.settings.get_dictionary_groupings()
+		'groupings': dicts.settings.get_dictionary_groupings(),
 	})
-	return response
 
 @api.route('/management/groups', methods=['GET', 'POST', 'DELETE', 'PUT'])
 def groups() -> 'Response':
@@ -84,14 +83,14 @@ def groups() -> 'Response':
 		dicts.settings.add_group(group)
 		response = make_yaml_response({
 			'groups': dicts.settings.groups,
-			'groupings': dicts.settings.get_dictionary_groupings()
+			'groupings': dicts.settings.get_dictionary_groupings(),
 		})
 	elif request.method == 'DELETE':
 		group_name = parse_yaml(request.get_data())['name']
 		dicts.settings.remove_group_by_name(group_name)
 		response = make_yaml_response({
 			'groups': dicts.settings.groups,
-			'groupings': dicts.settings.get_dictionary_groupings()
+			'groupings': dicts.settings.get_dictionary_groupings(),
 		})
 	elif request.method == 'PUT': # Should only be used to reorder groups
 		groups = parse_yaml(request.get_data())
@@ -106,19 +105,17 @@ def change_group_lang() -> 'Response':
 	dicts = current_app.extensions['dictionaries']
 	group = parse_yaml(request.get_data())
 	dicts.settings.change_group_lang(group['name'], group['lang'])
-	response = make_yaml_response(dicts.settings.groups)
-	return response
+	return make_yaml_response(dicts.settings.groups)
 
 @api.route('/management/group_name', methods=['PUT'])
 def change_group_name() -> 'Response':
 	dicts = current_app.extensions['dictionaries']
 	info = parse_yaml(request.get_data())
 	dicts.settings.change_group_name(info['old'], info['new'])
-	response = make_yaml_response({
+	return make_yaml_response({
 		'groups': dicts.settings.groups,
-		'groupings': dicts.settings.get_dictionary_groupings()
+		'groupings': dicts.settings.get_dictionary_groupings(),
 	})
-	return response
 
 @api.route('/management/dictionary_groupings', methods=['GET', 'POST', 'DELETE'])
 def dictionary_groupings() -> 'Response':

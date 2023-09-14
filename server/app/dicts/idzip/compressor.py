@@ -10,13 +10,12 @@ Project description:
 http://code.google.com/p/idzip/
 """
 
-import sys
-import zlib
 import struct
+import sys
 import time
-
+import zlib
 from io import BytesIO, UnsupportedOperation
-from os import path, SEEK_END, SEEK_SET
+from os import SEEK_END, SEEK_SET, path
 
 from ._stream import IOStreamWrapperMixin, check_file_like_for_writing
 
@@ -53,7 +52,8 @@ OS_CODE_UNIX = 3
 
 
 def compress(input, in_size, output, basename=None, mtime=None):
-	"""Produces a valid gzip output for the given input.
+	"""
+	Produces a valid gzip output for the given input.
 	A gzip file consists of one or many members.
 	Each member would be a valid gzip file.
 	"""
@@ -74,13 +74,13 @@ def compress(input, in_size, output, basename=None, mtime=None):
 
 
 def compress_member(input, in_size, output, basename, mtime):
-	""" Make the 'private' function public for the writer class
-	"""
+	"""Make the 'private' function public for the writer class."""
 	return _compress_member(input, in_size, output, basename, mtime)
 
 
 def _compress_member(input, in_size, output, basename, mtime):
-	"""A gzip member contains:
+	"""
+	A gzip member contains:
 	1) The header.
 	2) The compressed data.
 	"""
@@ -97,7 +97,8 @@ def _compress_member(input, in_size, output, basename, mtime):
 
 
 def _compress_data(input, in_size, output):
-	"""Compresses the given number of input bytes to the output.
+	"""
+	Compresses the given number of input bytes to the output.
 	The output consists of:
 	1) The compressed data.
 	2) 4 bytes of CRC.
@@ -114,7 +115,7 @@ def _compress_data(input, in_size, output):
 		read_size = min(need, CHUNK_LENGTH)
 		chunk = input.read(read_size)
 		if len(chunk) != read_size:
-			raise IOError("Need %s bytes, got %s" % (read_size, len(chunk)))
+			raise OSError(f"Need {read_size} bytes, got {len(chunk)}")
 
 		need -= len(chunk)
 		crcval = zlib.crc32(chunk, crcval)
@@ -140,7 +141,8 @@ def _compress_chunk(compobj, chunk, output):
 
 
 def _prepare_header(output, in_size, basename, mtime):
-	"""Writes a prepared gzip header to the output.
+	"""
+	Writes a prepared gzip header to the output.
 	The gzip header is defined in RFC 1952.
 
 	The gzip header starts with:
@@ -184,7 +186,8 @@ def _prepare_header(output, in_size, basename, mtime):
 
 
 def _write_extra_field(output, in_size):
-	"""Writes the dictzip extra field.
+	"""
+	Writes the dictzip extra field.
 	It will be initiated with zeros on the place of
 	the lengths of compressed chunks.
 
@@ -238,14 +241,12 @@ def _write_extra_field(output, in_size):
 
 
 def _write16(output, value):
-	"""Writes only the lowest 2 bytes from the given number.
-	"""
+	"""Writes only the lowest 2 bytes from the given number."""
 	output.write(struct.pack("<H", value & 0xffff))
 
 
 def _write32(output, value):
-	"""Writes only the lowest 4 bytes from the given number.
-	"""
+	"""Writes only the lowest 4 bytes from the given number."""
 	output.write(struct.pack("<I", value & 0xffffffff))
 
 
@@ -285,7 +286,7 @@ class IdzipWriter(IOStreamWrapperMixin):
 
 	def _prepare_file_stream(self, path):
 		if self.enforce_extension and not path.endswith(self.FILE_EXTENSION):
-			path = "%s.%s" % (path, self.FILE_EXTENSION)
+			path = f"{path}.{self.FILE_EXTENSION}"
 		return open(path, 'wb')
 
 	@property
@@ -413,8 +414,7 @@ class IdzipWriter(IOStreamWrapperMixin):
 			self.sync()
 			self.reset_buffer()
 			if self._should_close:
-				closing = self.output.close()
-				return closing
+				return self.output.close()
 		return None
 
 	def _calculate_number_of_chunks_for_bytes(self, in_size):
@@ -425,20 +425,19 @@ class IdzipWriter(IOStreamWrapperMixin):
 
 	def _calculate_extra_field_length(self, in_size):
 		num_chunks = self._calculate_number_of_chunks_for_bytes(in_size)
-		field_length = 3 * 2 + 2 * num_chunks
-		return field_length
+		return 3 * 2 + 2 * num_chunks
 
 	def _calculate_header_extra_size(self, in_size):
 		field_length = self._calculate_extra_field_length(in_size)
-		extra_length = 2 * 2 + field_length
-		return extra_length
+		return 2 * 2 + field_length
 
 	def _check_member_size_valid(self, in_size):
 		extra_length = self._calculate_header_extra_size(in_size)
 		return extra_length <= 0xffff
 
 	def compress_member(self):
-		"""A gzip member contains:
+		"""
+		A gzip member contains:
 		1) The header.
 		2) The compressed data.
 		"""
@@ -458,7 +457,8 @@ class IdzipWriter(IOStreamWrapperMixin):
 		self.output.seek(end_pos)
 
 	def _prepare_header(self, in_size):
-		"""Writes a prepared gzip header to the output.
+		"""
+		Writes a prepared gzip header to the output.
 		The gzip header is defined in RFC 1952.
 
 		The gzip header starts with:
@@ -484,10 +484,7 @@ class IdzipWriter(IOStreamWrapperMixin):
 		self.output.write(bytearray([flags]))
 
 		# The mtime will be undefined if it does not fit.
-		if self.mtime > 0xffffffff:
-			mtime = 0
-		else:
-			mtime = self.mtime
+		mtime = 0 if self.mtime > 4294967295 else self.mtime
 		_write32(self.output, mtime)
 
 		deflate_flags = b"\0"
@@ -503,7 +500,8 @@ class IdzipWriter(IOStreamWrapperMixin):
 		return zlengths_pos
 
 	def _write_extra_field(self, in_size):
-		"""Writes the dictzip extra field.
+		"""
+		Writes the dictzip extra field.
 		It will be initiated with zeros on the place of
 		the lengths of compressed chunks.
 
@@ -558,7 +556,8 @@ class IdzipWriter(IOStreamWrapperMixin):
 		return zlengths_pos
 
 	def _compress_data(self, in_size):
-		"""Compresses the given number of input bytes to the output.
+		"""
+		Compresses the given number of input bytes to the output.
 		The output consists of:
 		1) The compressed data.
 		2) 4 bytes of CRC.
@@ -573,7 +572,7 @@ class IdzipWriter(IOStreamWrapperMixin):
 			read_size = min(need, CHUNK_LENGTH)
 			chunk = self.input_buffer.read(read_size)
 			if len(chunk) != read_size:
-				raise IOError("Need %s bytes, got %s" % (read_size, len(chunk)))
+				raise OSError(f"Need {read_size} bytes, got {len(chunk)}")
 
 			need -= len(chunk)
 			crcval = zlib.crc32(chunk, crcval)

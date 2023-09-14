@@ -27,6 +27,7 @@ And select_entries_containing() should be optimised with an inverted-key table.
 
 import sqlite3
 import threading
+
 from .settings import Settings
 
 local_storage = threading.local()
@@ -58,7 +59,7 @@ def dictionary_exists(dictionary_name: 'str') -> 'bool':
 	return cursor.fetchone()[0] > 0
 
 def add_entry(key: 'str', dictionary_name: 'str', word: 'str', offset: 'int', size: 'int') -> 'None':
-	"Commit manually!"
+	"Commit manually!."
 	cursor = get_cursor()
 	cursor.execute('insert into entries values (?, ?, ?, ?, ?)', (key, dictionary_name, word, offset, size))
 
@@ -66,9 +67,7 @@ def commit() -> 'None':
 	get_connection().commit()
 
 def get_entries(key: 'str', dictionary_name: 'str') -> 'list[tuple[str, int, int]]':
-	"""
-	Returns a list of (word, offset, size).
-	"""
+	"""Returns a list of (word, offset, size)."""
 	cursor = get_cursor()
 	cursor.execute('select word, offset, size from entries where key = ? and dictionary_name = ?', (key, dictionary_name))
 	return cursor.fetchall()
@@ -95,26 +94,20 @@ def drop_index() -> 'None':
 	get_connection().commit()
 
 def select_entries_beginning_with(key: 'str', names_dictionaries: 'list[str]', limit: 'int') -> 'list[str]':
-	"""
-	Return the first ten entries (word) in the dictionaries that begin with key.
-	"""
+	"""Return the first ten entries (word) in the dictionaries that begin with key."""
 	cursor = get_cursor()
 	cursor.execute('select distinct word from entries where key >= ? and key < ? and dictionary_name in (%s) order by key limit ?' % ','.join('?' * len(names_dictionaries)), (key, key + '\U0003134A', *names_dictionaries, limit))
 	return [row[0] for row in cursor.fetchall()]
 
 def select_entries_containing(key: 'str', names_dictionaries: 'list[str]', words_already_found: 'list[str]', limit: 'int') -> 'list[str]':
-	"""
-	Return the first num_suggestions - len(words_already_found) entries (word) in the dictionaries that contain key.
-	"""
+	"""Return the first num_suggestions - len(words_already_found) entries (word) in the dictionaries that contain key."""
 	num_words = limit - len(words_already_found)
 	cursor = get_cursor()
-	cursor.execute('select distinct word from entries where key like ? and dictionary_name in (%s) and word not in (%s) order by key limit ?' % (','.join('?' * len(names_dictionaries)), ','.join('?' * len(words_already_found))), ('%' + key + '%', *names_dictionaries, *words_already_found, num_words))
+	cursor.execute('select distinct word from entries where key like ? and dictionary_name in ({}) and word not in ({}) order by key limit ?'.format(','.join('?' * len(names_dictionaries)), ','.join('?' * len(words_already_found))), ('%' + key + '%', *names_dictionaries, *words_already_found, num_words))
 	return [row[0] for row in cursor.fetchall()]
 
 def select_entries_like(key: 'str', names_dictionaries: 'list[str]', limit: 'int') -> 'list[str]':
-	"""
-	Return the first ten entries matched.
-	"""
+	"""Return the first ten entries matched."""
 	cursor = get_cursor()
 	cursor.execute('select distinct word from entries where key like ? and dictionary_name in (%s) order by key limit ?' % ','.join('?' * len(names_dictionaries)), (key, *names_dictionaries, limit))
 	return [row[0] for row in cursor.fetchall()]

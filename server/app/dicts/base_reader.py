@@ -1,27 +1,27 @@
 import abc
 import unicodedata
+
 from ..settings import Settings
 
+
 class BaseReader(abc.ABC):
-	"""
-	Abstract base class for reading dictionaries.
-	"""
+
+	"""Abstract base class for reading dictionaries."""
+
 	_CACHE_ROOT = Settings.CACHE_ROOT
 	_ARTICLE_SEPARATOR = '\n<hr>\n'
 
 	@staticmethod
 	def strip_diacritics(text: 'str') -> 'str':
 		return ''.join(c for c in unicodedata.normalize('NFKD', text) if unicodedata.category(c) != 'Mn' and not unicodedata.combining(c))
-	
+
 	@staticmethod
 	def remove_punctuation_and_spaces(text: 'str') -> 'str':
 		return ''.join(c for c in text if unicodedata.category(c)[0] not in ['P', 'Z'])
-	
+
 	@staticmethod
 	def simplify(text: 'str') -> 'str':
-		"""
-		Removes accents and punctuation, expand ligatures, and converts to lowercase.
-		"""
+		"""Removes accents and punctuation, expand ligatures, and converts to lowercase."""
 		return BaseReader.remove_punctuation_and_spaces(BaseReader.strip_diacritics(text)).casefold()
 
 	def __init__(self,

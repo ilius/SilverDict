@@ -1,12 +1,13 @@
-import re
-import os
-import shutil
-import html
 import concurrent.futures
-from zipfile import ZipFile
-from xml.sax.saxutils import escape, quoteattr
-from .main import DSLParser
+import html
 import logging
+import os
+import re
+import shutil
+from xml.sax.saxutils import escape, quoteattr
+from zipfile import ZipFile
+
+from .main import DSLParser
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -44,10 +45,7 @@ def unescape(text: str) -> str:
 		if text[:2] == "&#":
 			# character reference
 			try:
-				if text[:3] == "&#x":
-					i = int(text[3:-1], 16)
-				else:
-					i = int(text[2:-1])
+				i = int(text[3:-1], 16) if text[:3] == '&#x' else int(text[2:-1])
 			except ValueError:
 				pass
 			else:
@@ -213,21 +211,21 @@ class DSLConverter:
 			if not os.path.isfile(os.path.join(self._resources_dir, media_name)):
 				files_to_be_extracted.append(media_name)
 				if self._resources_extracted:
-					logger.warning('Media file %s not found in resources directory %s' % (media_name, self._resources_dir))
+					logger.warning('Media file {} not found in resources directory {}'.format(media_name, self._resources_dir))
 
 			media_ref = self._href_root + media_name
 			if media_name.split('.')[-1] in self.IMAGE_EXTENSIONS:
 				proper_media_html = '<img src="%s" />' % media_ref
 			elif media_name.split('.')[-1] in self.SOUND_EXTENSIONS:
-				proper_media_html = '<audio controls %s src="%s">%s</audio>' % (autoplay_string, media_ref, media_name)
+				proper_media_html = '<audio controls {} src="{}">{}</audio>'.format(autoplay_string, media_ref, media_name)
 				autoplay_string = ''
 			elif media_name.split('.')[-1] in self.VIDEO_EXTENSIONS:
 				proper_media_html = '<video controls src="%s">video</video>' % media_ref
 			else:
-				proper_media_html = '<a href="%s">%s</a>' % (media_ref, media_name)
+				proper_media_html = f'<a href="{media_ref}">{media_name}</a>'
 			html = html.replace('[s]%s[/s]' % media_name, proper_media_html)
 		return html, files_to_be_extracted
-	
+
 	def _extract_files(self, files_to_be_extracted: 'list[str]') -> 'None':
 		# ZipFile's extractall() is too slow, so we use a thread pool to extract files in parallel.
 		with ZipFile(self._resources_filename) as zip_file:
@@ -254,6 +252,5 @@ class DSLConverter:
 
 		text = self._clean_tags(text)
 
-		text = self._clean_html(text)
+		return self._clean_html(text)
 
-		return text

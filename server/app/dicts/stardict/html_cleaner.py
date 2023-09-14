@@ -1,16 +1,18 @@
-import re
 import os
-from pathlib import Path
+import re
 import shutil
 
+
 class HtmlCleaner:
+
 	"""
 	Cleans up HTML-formatted StarDict dictionaries. Does the following:
 	- convert href="bword://Bogen" to href="/api/lookup/OxfordDuden/Bogen"
 	- fix img src paths
 	- fix hrefs defined inside lemma class spans, e.g. <span class="lemma"><a href="%E1%BC%80%CE%B3%CE%B1%CE%B8%CE%BF%CE%B5%CF%81%CE%B3%E1%BD%B7%CE%B1">ἀγαθοεργία</a></span> -> <span class="lemma"><a href="/api/lookup/morphology-grc/%E1%BC%80%CE%B3%CE%B1%CE%B8%CE%BF%CE%B5%CF%81%CE%B3%E1%BD%B7%CE%B1">ἀγαθοεργία</a></span>
-	- remove outer <div class="article"></div> tag if present
+	- remove outer <div class="article"></div> tag if present.
 	"""
+
 	def __init__(self, dictionary_name: 'str', dictionary_path: 'str', resource_dir: 'str') -> 'None':
 		# self._original_res_dir = os.path.join(dictionary_path, 'res')
 		# self._new_res_dir = resource_dir
@@ -42,14 +44,12 @@ class HtmlCleaner:
 		return re.sub(self._non_printing_chars_pattern, '', html)
 
 	def _lower_html_tags(self, html: 'str') -> 'str':
-		"""
-		Converts the tags I use to lowercase. (for now: img)
-		"""
+		"""Converts the tags I use to lowercase. (for now: img)."""
 		return html.replace('<IMG', '<img').replace('</IMG', '</img').replace(' SRC=', ' src=')
 
 	def _convert_single_quotes_to_double(self, html: 'str') -> 'str':
 		return re.sub(self._single_quotes_pattern, "\"\\1\"", html)
-	
+
 	def _fix_cross_ref(self, html: 'str') -> 'str':
 		return re.sub(self._cross_ref_pattern, self._cross_ref_replacement, html)
 
@@ -100,6 +100,7 @@ class HtmlCleaner:
 	def _remove_outer_article_div(self, html: 'str') -> 'str':
 		if html.startswith('<div class="article">') and html.endswith('</div>'):
 			return html[len('<div class="article">'):-len('</div>')]
+		return None
 
 	def clean(self, html: 'str') -> 'str':
 		html = self._remove_non_printing_chars(html)
@@ -108,5 +109,4 @@ class HtmlCleaner:
 		html = self._fix_cross_ref(html)
 		html = self._fix_lemma_href(html)
 		html = self._fix_src_path(html)
-		html = self._remove_outer_article_div(html)
-		return html
+		return self._remove_outer_article_div(html)

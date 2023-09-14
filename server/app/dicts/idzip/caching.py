@@ -1,12 +1,11 @@
-"""
-sample caches to use
-"""
+"""sample caches to use."""
 from random import randint
 
 LUCKY_SIZE = 32
 
 
-class OneItemCache(object):
+class OneItemCache:
+
 	"""
 	The simplest LRU cache.
 
@@ -21,6 +20,7 @@ class OneItemCache(object):
 			etc.
 
 	"""
+
 	def __init__(self):
 		self.key = None
 		self.value = None
@@ -35,9 +35,10 @@ class OneItemCache(object):
 		self.value = value
 
 
-class ZeroCache(object):
+class ZeroCache:
+
 	"""
-	disables the cache
+	disables the cache.
 
 	for those with no memory but plenty of CPU cycles
 
@@ -51,6 +52,7 @@ class ZeroCache(object):
 
 	worse than OneItem in every case outside the good case.
 	"""
+
 	def __init__(self):
 		return
 
@@ -61,10 +63,11 @@ class ZeroCache(object):
 		return None
 
 
-class LuckyCache(object):
+class LuckyCache:
+
 	"""
 	Implements a random cache of size LUCKY_SIZE
-	see test/test_lucky_cache.py for settings
+	see test/test_lucky_cache.py for settings.
 
 	for those with extra memory but wasted CPU cycles
 
@@ -72,13 +75,14 @@ class LuckyCache(object):
 
 	sequential reads should use OneItemCache
 	"""
+
 	def __init__(self):
 		self._cache = {}
 		self._cache_index = {}
 		for x in range(-LUCKY_SIZE, 0):  # negative because caches positive ints
 			self._cache[x] = None
 			self._cache_index[x] = x
-		return None
+		return
 
 	def get(self, key):
 		return self._cache.get(key, None)
@@ -90,4 +94,4 @@ class LuckyCache(object):
 			self._cache.pop(unlucky_key)
 			self._cache[key] = value
 			self._cache_index[unlucky_index] = key
-		return None
+		return

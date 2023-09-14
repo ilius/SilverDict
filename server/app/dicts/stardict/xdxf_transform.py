@@ -12,21 +12,23 @@ if TYPE_CHECKING:
 
 	from .lxml_types import T_htmlfile
 
-from lxml import etree as ET
 # from pyglossary.core import rootDir
 import os
+
+from lxml import etree as ET
+
 current_file_dir = os.path.dirname(os.path.abspath(__file__))
 xdxf_xsl_path = join(current_file_dir, "xdxf.xsl")
 
 log = logging.getLogger(__name__)
 
 
-class XslXdxfTransformer(object):
+class XslXdxfTransformer:
 	_gram_color: str = "green"
 	_example_padding: int = 10
 
 	def __init__(self: "typing.Self", encoding: str = "utf-8") -> None:
-		with open(xdxf_xsl_path, "r") as f:
+		with open(xdxf_xsl_path) as f:
 			xslt_txt = f.read()
 
 		xslt = ET.XML(xslt_txt)
@@ -54,7 +56,7 @@ class XslXdxfTransformer(object):
 		)
 
 
-class XdxfTransformer(object):
+class XdxfTransformer:
 	_gram_color: str = "green"
 	_example_padding: int = 10
 
@@ -371,7 +373,7 @@ class XdxfTransformer(object):
 			parent=parent,
 			prev=prev,
 			stringSep=stringSep,
-		) 
+		)
 
 	def shouldAddSep(
 		self: "typing.Self",

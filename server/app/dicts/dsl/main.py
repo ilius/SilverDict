@@ -14,9 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-"""
-exposed API lives here.
-"""
+"""exposed API lives here."""
 
 
 import copy
@@ -32,9 +30,7 @@ def process_closing_tags(
 	stack: "Iterable[_layer.Layer]",
 	tags: "Iterable[str]",
 ) -> None:
-	"""
-	close `tags`, closing some inner layers if necessary.
-	"""
+	"""Close `tags`, closing some inner layers if necessary."""
 	index = len(stack) - 1
 	for tag in copy.copy(tags):
 		index_for_tag = _tag.index_of_layer_containing_tag(stack, tag)
@@ -79,10 +75,9 @@ re_non_escaped_bracket = re.compile(r"(?<!\\)\[")
 _startswith_tag_cache = {}
 
 
-class DSLParser(object):
-	"""
-	only clean dsl on output!
-	"""
+class DSLParser:
+
+	"""only clean dsl on output!."""
 
 	def __init__(
 		self: "typing.Self",
@@ -157,10 +152,7 @@ class DSLParser(object):
 		ptr = 0
 		while ptr < len(line):
 			bracket = line.find("[", ptr)
-			if bracket != -1:
-				chunk = line[ptr:bracket]
-			else:
-				chunk = line[ptr:]
+			chunk = line[ptr:bracket] if bracket != -1 else line[ptr:]
 
 			if chunk:
 				yield TEXT, chunk
@@ -189,9 +181,7 @@ class DSLParser(object):
 	def _tags_and_text_loop(
 		tags_and_text: "Iterable[[OPEN, _tag.Tag] | [CLOSE, str] | [TEXT, str]]",
 	) -> str:
-		"""
-		parse chunks one by one.
-		"""
+		"""Parse chunks one by one."""
 		state = TEXT
 		stack = []
 		closings = set()
@@ -252,7 +242,8 @@ class DSLParser(object):
 		return "".join(layer.text for layer in stack)
 
 	def put_brackets_away(self: "typing.Self", line: str) -> str:
-		r"""put away \[, \] and brackets that does not belong to any of given tags.
+		r"""
+		put away \[, \] and brackets that does not belong to any of given tags.
 
 		:rtype: str
 		"""

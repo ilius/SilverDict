@@ -1,12 +1,13 @@
 #!/usr/bin/env python
-"""Usage: %prog [OPTION]... FILE...
+"""
+Usage: %prog [OPTION]... FILE...
 Compresses the given files.
 """
 
+import logging
+import optparse
 import os
 import sys
-import optparse
-import logging
 
 parent_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, parent_dir)
@@ -54,7 +55,8 @@ def _compress(filename, options):
 
 
 def _decompress(filename, options):
-	"""Decompresses the whole file.
+	"""
+	Decompresses the whole file.
 	It is useful mainly for testing. Normal gunzip is enough
 	when uncompressing a file from the beginning.
 	"""

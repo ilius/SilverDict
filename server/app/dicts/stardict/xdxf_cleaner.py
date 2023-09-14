@@ -1,5 +1,7 @@
 import re
+
 from .xdxf_transform import XdxfTransformer
+
 
 class XdxfCleaner:
 	IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'bmp', 'tif', 'tiff', 'ico', 'webp', 'avif', 'apng', 'jfif', 'pjpeg', 'pjp']
@@ -14,9 +16,7 @@ class XdxfCleaner:
 		self._transformer = XdxfTransformer(encoding='utf-8')
 
 	def clean(self, xdxf: 'str') -> 'str':
-		"""
-		Returns HTML that should be further cleaned.
-		"""
+		"""Returns HTML that should be further cleaned."""
 		extracted_resources_names : 'list[str]' = []
 		def extract_resources(match: 're.Match[str]') -> 'str':
 			extracted_resources_names.append(match.group(1))
@@ -30,10 +30,10 @@ class XdxfCleaner:
 			if resource.split('.')[-1] in self.IMAGE_EXTENSIONS:
 				proper_resource_html = '<img src="%s" />' % resource
 			elif resource.split('.')[-1] in self.SOUND_EXTENSIONS:
-				proper_resource_html = '<audio controls %s src="%s">audio</audio>' % (autoplay_string, resource)
+				proper_resource_html = '<audio controls {} src="{}">audio</audio>'.format(autoplay_string, resource)
 				autoplay_string = ''
 			else:
-				proper_resource_html = '<a href="%s">download media</a>' % (resource, resource)
+				proper_resource_html = f'<a href="{resource}">download media</a>'
 			html = html.replace('<img></img>', proper_resource_html, 1)
-		
+
 		return html

@@ -1,6 +1,6 @@
 """
 Interface base class implementations.
-taken from https://github.com/mrogaski/pygopher-interfaces
+taken from https://github.com/mrogaski/pygopher-interfaces.
 
 MIT License
 
@@ -34,9 +34,11 @@ def method_signatures(obj: type) -> "set[inspect.Signature]":
     Return the set of public method signatures for a class.
 
     Args:
+    ----
         obj: a class
 
     Returns:
+    -------
         A set containing the method signatures.  Dunder methods,
         private methods, and properties are excluded.
 
@@ -52,21 +54,21 @@ def method_signatures(obj: type) -> "set[inspect.Signature]":
 
 
 class Interface(type):
-    """
-    Metaclass that defines the subclass relationship without inheritance.
-    """
+
+    """Metaclass that defines the subclass relationship without inheritance."""
 
     def __subclasscheck__(self: "Interface", subclass: type) -> bool:
         """
 
         Args:
+        ----
             subclass: a class which will be checked for matching method signatures.
 
         Returns:
+        -------
             True if the subclass implements the interface, false otherwise.
 
         """
-
         interface_methods = method_signatures(self)
         class_methods = method_signatures(subclass)
         return interface_methods.issubset(class_methods)
@@ -75,9 +77,11 @@ class Interface(type):
         """
 
         Args:
+        ----
             instance: an object which will be checked for matching method signatures.
 
         Returns:
+        -------
             True if the instance class implements the interface, false otherwise.
 
         """

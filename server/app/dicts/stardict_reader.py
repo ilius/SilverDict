@@ -1,16 +1,23 @@
-import os
-from .base_reader import BaseReader
-from .. import db_manager
-from .stardict import IdxFileReader, IfoFileReader, DictFileReader, HtmlCleaner, XdxfCleaner
 import logging
+import os
+
+from .. import db_manager
+from .base_reader import BaseReader
+from .stardict import (
+	DictFileReader,
+	HtmlCleaner,
+	IdxFileReader,
+	IfoFileReader,
+	XdxfCleaner,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 class StarDictReader(BaseReader):
-	"""
-	Adapted from stardictutils.py by J.F. Dockes.
-	"""
+
+	"""Adapted from stardictutils.py by J.F. Dockes."""
+
 	CTTYPES = ['m', 't', 'y', 'g', 'x', 'h']
 
 	@staticmethod
@@ -26,7 +33,7 @@ class StarDictReader(BaseReader):
 	def __init__(self,
 	      		 name: 'str',
 				 filename: 'str', # .ifo
-				 display_name: 'str',) -> 'None':
+				 display_name: 'str') -> 'None':
 		super().__init__(name, filename, display_name)
 		filename_no_extension, extension = os.path.splitext(filename)
 		self.ifofile, idxfile, self.dictfile, synfile = self._stardict_filenames(filename_no_extension)
@@ -58,7 +65,7 @@ class StarDictReader(BaseReader):
 		m, t, y: text
 		g: pango, pretty HTML-like, rarely seen, tentatively treated as regular HTML as I have seen no irregularities
 		x: xdxf
-		h: html
+		h: html.
 		"""
 		ifo_reader = IfoFileReader(self.ifofile)
 		if not os.path.isfile(self.dictfile): # it is possible that it is not dictzipped
@@ -77,9 +84,7 @@ class StarDictReader(BaseReader):
 		return result
 
 	def _clean_up_markup(self, record: 'tuple[str, str]') -> 'str':
-		"""
-		Cleans up the markup according the cttype and returns valid HTML.
-		"""
+		"""Cleans up the markup according the cttype and returns valid HTML."""
 		cttype, article = record
 		match cttype:
 			case 'm' | 't' | 'y':

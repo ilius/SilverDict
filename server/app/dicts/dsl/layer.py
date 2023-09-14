@@ -26,7 +26,7 @@ from typing import Iterable
 from . import tag
 
 
-class Layer(object):
+class Layer:
 
 	__slots__ = ["tags", "text"]
 
@@ -43,9 +43,7 @@ class Layer(object):
 		return f"Layer({tags}, {self.text!r})"
 
 	def __eq__(self: "typing.Self", other: "Layer") -> bool:
-		"""
-		mostly for unittest.
-		"""
+		"""Mostly for unittest."""
 		return self.text == other.text and self.tags == other.tags
 
 
@@ -58,9 +56,7 @@ def close_tags(
 	tags: "Iterable[tag.Tag]",
 	layer_index: bool = -1,
 ) -> None:
-	"""
-	close given tags on layer with index `layer_index`.
-	"""
+	"""Close given tags on layer with index `layer_index`."""
 	if layer_index == -1:
 		layer_index = len(stack) - 1
 	layer = stack[layer_index]
@@ -94,9 +90,7 @@ def close_tags(
 
 
 def close_layer(stack: "list[Layer]") -> None:
-	"""
-	close top layer on stack.
-	"""
+	"""Close top layer on stack."""
 	if not stack:
 		return
 	tags = stack[-1].tags

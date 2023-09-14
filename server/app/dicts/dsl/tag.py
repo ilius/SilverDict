@@ -14,15 +14,14 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-"""
-internal stuff. Tag class
-"""
+"""internal stuff. Tag class."""
 
 
 from collections import namedtuple
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
-from . import layer as _layer
+if TYPE_CHECKING:
+	from . import layer as _layer
 
 Tag = namedtuple("Tag", ["opening", "closing"])
 
@@ -40,9 +39,7 @@ predefined = [
 
 
 def was_opened(stack: "Iterable[_layer.Layer]", tag: "Tag") -> bool:
-	"""
-	check if tag was opened at some layer before.
-	"""
+	"""Check if tag was opened at some layer before."""
 	if not len(stack):
 		return False
 	layer = stack[-1]
@@ -72,9 +69,7 @@ def index_of_layer_containing_tag(
 	stack: "Iterable[_layer.Layer]",
 	tag: str,
 ) -> "int | None":
-	"""
-	return zero based index of layer with `tag` or None
-	"""
+	"""Return zero based index of layer with `tag` or None."""
 	for i, layer in enumerate(reversed(stack)):
 		for t in layer.tags:
 			if t.closing == tag:

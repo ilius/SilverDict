@@ -1,8 +1,9 @@
+import os
+import socketserver
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse
+
 import requests
-import socketserver
-import os
 
 file_dir = os.path.dirname(__file__)
 dist_dir = os.path.join(file_dir, 'build')
@@ -10,9 +11,7 @@ dist_dir = os.path.join(file_dir, 'build')
 class Proxy(BaseHTTPRequestHandler):
 	PORT = 2628
 	def do_GET(self) -> 'None':
-		"""
-		Forward everything under /api to the backend server at http://localhost:PORT
-		"""
+		"""Forward everything under /api to the backend server at http://localhost:PORT."""
 		parsed_url = urlparse(self.path)
 		if parsed_url.path.startswith('/api'):
 			# Forward the request to the backend server

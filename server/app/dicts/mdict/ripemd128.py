@@ -1,5 +1,6 @@
-""" 
-Copyright by https://github.com/zhansliu/writemdict
+"""
+
+Copyright by https://github.com/zhansliu/writemdict.
 
 ripemd128.py - A simple ripemd128 library in pure Python.
 
@@ -14,7 +15,6 @@ Usage:
 
 
 import struct
-
 
 # follows this description: http://homes.esat.kuleuven.be/~bosselae/ripemd/rmd128.txt
 
@@ -55,7 +55,7 @@ def padandsplit(message):
 	"""
 	returns a two-dimensional array X[i][j] of 32-bit integers, where j ranges
 	from 0 to 16.
-	First pads the message to length in bytes is congruent to 56 (mod 64), 
+	First pads the message to length in bytes is congruent to 56 (mod 64),
 	by first adding a byte 0x80, and then padding with 0x00 bytes until the
 	message length is congruent to 56 (mod 64). Then adds the little-endian
 	64-bit representation of the original length. Finally, splits the result
@@ -120,10 +120,10 @@ def ripemd128(message):
 		h2 = add(h3,A,Bp)
 		h3 = add(h0,B,Cp)
 		h0 = T
-	
-	
+
+
 	return struct.pack("<LLLL",h0,h1,h2,h3)
 
 def hexstr(bstr):
-	return "".join("{0:02x}".format(b) for b in bstr)
-	
+	return "".join(f"{b:02x}" for b in bstr)
+

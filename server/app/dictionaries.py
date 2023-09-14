@@ -1,12 +1,16 @@
-from flask import Flask
 import concurrent.futures
-from .settings import Settings
+import logging
+from typing import TYPE_CHECKING
+
 from . import db_manager
 from .dicts.base_reader import BaseReader
+from .dicts.dsl_reader import DSLReader
 from .dicts.mdict_reader import MDictReader
 from .dicts.stardict_reader import StarDictReader
-from .dicts.dsl_reader import DSLReader
-import logging
+from .settings import Settings
+
+if TYPE_CHECKING:
+	from flask import Flask
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -37,7 +41,7 @@ class Dictionaries:
 
 		db_manager.create_table_entries()
 
-		self.dictionaries : 'dict[str, BaseReader]' = dict()
+		self.dictionaries : 'dict[str, BaseReader]' = {}
 		for dictionary_info in self.settings.dictionaries_list:
 			self._load_dictionary(dictionary_info)
 		logger.info('Dictionaries loaded into memory.')
@@ -86,15 +90,11 @@ class Dictionaries:
 		return candidates
 
 	def lookup(self, dictionary_name: 'str', key: 'str') -> 'str':
-		"""
-		Returns HTML article
-		"""
+		"""Returns HTML article."""
 		return self.dictionaries[dictionary_name].entry_definition(key)
 
 	def query(self, group_name: 'str', key: 'str') -> 'list[tuple[str, str, str]]':
-		"""
-		Returns a list of tuples (dictionary name, dictionary display name, HTML article)
-		"""
+		"""Returns a list of tuples (dictionary name, dictionary display name, HTML article)."""
 		names_dictionaries_of_group = self.settings.dictionaries_of_group(group_name)
 		autoplay_found = False
 		articles = []
@@ -112,5 +112,4 @@ class Dictionaries:
 			executor.map(extract_articles_from_dictionary, names_dictionaries_of_group)
 
 		# The articles may be out of order after parellel processing, so we reorder them by the order of dictionaries in the group
-		articles = [article for dictionary_name in names_dictionaries_of_group for article in articles if article[0] == dictionary_name]
-		return articles
+		return [article for dictionary_name in names_dictionaries_of_group for article in articles if article[0] == dictionary_name]

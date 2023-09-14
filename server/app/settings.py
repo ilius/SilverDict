@@ -1,16 +1,19 @@
+import logging
 import os
 import shutil
 from pathlib import Path
+
 import yaml
-import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 try:
-	from yaml import CSafeLoader as Loader, CDumper as Dumper
+	from yaml import CDumper as Dumper
+	from yaml import CSafeLoader as Loader
 except ImportError:
-	from yaml import SafeLoader as Loader, Dumper
+	from yaml import Dumper
+	from yaml import SafeLoader as Loader
 	logger.warning('Using pure Python YAML parser. Consider installing libyaml for faster speed.')
 
 class Settings:
@@ -25,7 +28,7 @@ class Settings:
 	SUPPORTED_DICTIONARY_FORMATS = {
 		'MDict (.mdx)': ['.mdx'],
 		'StarDict (.ifo)': ['.ifo'],
-		'DSL (.dsl/.dsl.dz)': ['.dsl', '.dz']
+		'DSL (.dsl/.dsl.dz)': ['.dsl', '.dz'],
 	}
 
 	PREFERENCES_FILE = os.path.join(APP_RESOURCES_ROOT, 'preferences.yaml')
@@ -166,8 +169,8 @@ running_mode: normal # suitable for running locally
 			self.groups = [
 				{
 					'name': 'Default Group',
-					'lang': set()
-				}
+					'lang': set(),
+				},
 			]
 			self._save_groups()
 
@@ -195,7 +198,7 @@ running_mode: normal # suitable for running locally
 				self.misc_configs['history_size'] = 100
 			if 'sources' not in self.misc_configs.keys():
 				self.misc_configs['sources'] = [
-					self.DEFAULT_SOURCE_DIR
+					self.DEFAULT_SOURCE_DIR,
 				]
 			if 'num_suggestions' not in self.misc_configs.keys():
 				self.misc_configs['num_suggestions'] = 10
@@ -204,9 +207,9 @@ running_mode: normal # suitable for running locally
 			self.misc_configs = {
 				'history_size': 100,
 				'sources': [
-					self.DEFAULT_SOURCE_DIR
+					self.DEFAULT_SOURCE_DIR,
 				],
-				'num_suggestions': 10
+				'num_suggestions': 10,
 			}
 			self._save_misc_configs()
 
@@ -217,9 +220,7 @@ running_mode: normal # suitable for running locally
 		return all(key in group.keys() for key in ['name', 'lang']) and all(lang in self.LANGS for lang in group['lang'])
 
 	def source_valid(self, source: 'str') -> 'bool':
-		"""
-		Create if not exists.
-		"""
+		"""Create if not exists."""
 		if os.path.isfile(source):
 			return False
 		else:
@@ -248,7 +249,7 @@ running_mode: normal # suitable for running locally
 		for dictionary_info in self.dictionaries_list:
 			if dictionary_info['dictionary_name'] == dictionary_name:
 				dictionary_info['dictionary_display_name'] = new_dictionary_display_name
-				logger.info('Name of dictionary %s changed to %s.' % (dictionary_info['dictionary_name'], new_dictionary_display_name))
+				logger.info('Name of dictionary {} changed to {}.'.format(dictionary_info['dictionary_name'], new_dictionary_display_name))
 				self._save_dictionary_list()
 				break
 
@@ -273,9 +274,7 @@ running_mode: normal # suitable for running locally
 		return any(group['name'] == group_name for group in self.groups)
 
 	def get_dictionary_groupings(self) -> 'dict[str, set[str]]':
-		"""
-		Return a dict that maps group names to a set of dictionary names (reversed).
-		"""
+		"""Return a dict that maps group names to a set of dictionary names (reversed)."""
 		dictionary_groupings = {group['name']: set() for group in self.groups}
 		for dictionary_name, groups in self.junction_table.items():
 			for group in groups:
@@ -292,13 +291,13 @@ running_mode: normal # suitable for running locally
 			if group_name in self.junction_table[dictionary_name]:
 				self.junction_table[dictionary_name].remove(group_name)
 				self.junction_table[dictionary_name].add(new_group_name)
-		logger.info('Group %s changed to %s.' % (group_name, new_group_name))
+		logger.info(f'Group {group_name} changed to {new_group_name}.')
 
 	def change_group_lang(self, group_name: 'str', new_group_lang: 'set[str]') -> 'None':
 		for group in self.groups:
 			if group['name'] == group_name:
 				group['lang'] = set(new_group_lang) # Fix a strange bug where set is converted to list when serializing
-				logger.info('Languages of group %s changed to %s.' % (group_name, group['lang']))
+				logger.info('Languages of group {} changed to {}.'.format(group_name, group['lang']))
 				self._save_groups()
 				break
 
@@ -341,7 +340,7 @@ running_mode: normal # suitable for running locally
 		if not group_name in self.junction_table[dictionary_name]:
 			self.junction_table[dictionary_name].add(group_name)
 			self._save_junction_table()
-		logger.info('Dictionary %s added to group %s.' % (dictionary_name, group_name))
+		logger.info(f'Dictionary {dictionary_name} added to group {group_name}.')
 
 	def reorder_dictionaries(self, dictionaries_info: 'list[dict[str, str]]') -> 'None':
 		"""
@@ -366,7 +365,7 @@ running_mode: normal # suitable for running locally
 	def remove_dictionary_from_group(self, dictionary_name: 'str', group_name: 'str') -> 'None':
 		self.junction_table[dictionary_name].remove(group_name)
 		self._save_junction_table()
-		logger.info('Dictionary %s removed from group %s.' % (dictionary_name, group_name))
+		logger.info(f'Dictionary {dictionary_name} removed from group {group_name}.')
 
 	def dictionaries_of_group(self, group_name: 'str') -> 'list[str]':
 		names = [dictionary_name for dictionary_name, groups in self.junction_table.items() if group_name in groups]
@@ -380,14 +379,12 @@ running_mode: normal # suitable for running locally
 			logger.info('New source %s added.' % source)
 
 	def remove_source(self, source: 'str') -> 'None':
-		"""
-		The directory itself won't be removed
-		"""
+		"""The directory itself won't be removed."""
 		if source in self.misc_configs['sources']:
 			self.misc_configs['sources'].remove(source)
 			self._save_misc_configs()
 			logger.info('Source %s removed.' % source)
-	
+
 	def scan_source(self, source):
 		for filename in os.listdir(source):
 			full_filename = os.path.join(source, filename)
@@ -399,20 +396,18 @@ running_mode: normal # suitable for running locally
 							name = filename[:-len('.dsl.dz')]
 						else:
 							name = os.path.splitext(filename)[0]
-						logger.info('Found dictionary %s (%s) during re-scanning.' % (name, full_filename))
+						logger.info(f'Found dictionary {name} ({full_filename}) during re-scanning.')
 						yield {
 							'dictionary_display_name': name,
 							'dictionary_name': name,
 							'dictionary_format': dictionary_format,
-							'dictionary_filename': full_filename
+							'dictionary_filename': full_filename,
 						}
 			elif os.path.isdir(full_filename) and filename.find('.files') == -1 and filename != 'res':
 				yield from self.scan_source(full_filename)
 
 	def scan_sources(self):
-		"""
-		Scan the sources and return a list of unregistered dictionaries' info.
-		"""
+		"""Scan the sources and return a list of unregistered dictionaries' info."""
 		for source in self.misc_configs['sources']:
 			yield from self.scan_source(source)
 

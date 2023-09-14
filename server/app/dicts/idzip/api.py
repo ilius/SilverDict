@@ -1,9 +1,9 @@
-import io
 import errno
-
-from .compressor import IdzipWriter, MAX_MEMBER_SIZE
-from .decompressor import IdzipReader
+import io
 from gzip import GzipFile
+
+from .compressor import MAX_MEMBER_SIZE, IdzipWriter
+from .decompressor import IdzipReader
 
 
 def open(filename, mode='rb', sync_size=MAX_MEMBER_SIZE):
@@ -22,7 +22,7 @@ def decompress(data):
 	return IdzipFile(fileobj=in_).read()
 
 
-class IdzipFile(object):
+class IdzipFile:
 	def __init__(self, filename=None, mode="rb", fileobj=None, sync_size=MAX_MEMBER_SIZE, mtime=None):
 		self._impl = None
 		if 'b' not in mode:
@@ -30,7 +30,7 @@ class IdzipFile(object):
 		if "r" in mode:
 			try:
 				self._impl = self._make_reader(filename, mode, fileobj)
-			except IOError:
+			except OSError:
 				self._impl = self._fallback_to_gzip(filename, mode, fileobj)
 		elif 'w' in mode:
 			if filename is None:
@@ -40,7 +40,7 @@ class IdzipFile(object):
 			else:
 				self._impl = self._make_writer(filename, sync_size=sync_size, mtime=mtime)
 		else:
-			raise IOError("Unsupported mode %r" % mode)
+			raise OSError("Unsupported mode %r" % mode)
 		self.mode = mode
 
 	def _make_reader(self, filename, mode, fileobj):
@@ -64,8 +64,7 @@ class IdzipFile(object):
 
 	def write(self, b):
 		self._check_can_write()
-		value = self._impl.write(b)
-		return value
+		return self._impl.write(b)
 
 	def read(self, size=-1):
 		self._check_can_read()
@@ -119,7 +118,7 @@ class IdzipFile(object):
 			line = self.readline()
 
 	def __repr__(self):
-		return "<idzip %s file %r at %s>" % (
+		return "<idzip {} file {!r} at {}>".format(
 			"open" if not self.closed else "closed",
 			self.name,
 			hex(id(self)))

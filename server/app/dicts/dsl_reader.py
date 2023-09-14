@@ -1,13 +1,14 @@
-import re
+import logging
 import os
+import re
 import shutil
 from json import detect_encoding
 from pathlib import Path
-from .base_reader import BaseReader
+
 from .. import db_manager
 from . import idzip
+from .base_reader import BaseReader
 from .dsl import DSLConverter
-import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -17,6 +18,7 @@ class Options: # for use with idzip
 	keep = False
 
 class DSLReader(BaseReader):
+
 	"""
 	Adapted from dslutils.py by J.F. Dockes with enhancements.
 	DSL dictionaries have five possible file types:
@@ -24,8 +26,9 @@ class DSLReader(BaseReader):
 	- name.bmp: dictionary icon (unused)
 	- name.dsl: the main dictionary file, usually compressed (.dz)
 	- name.dsl.files.zip: the resources (images, sounds, etc.) of the dictionary
-	- name_abrv.dsl: some useless abbreviations, usually compressed (.dz) (unused)
+	- name_abrv.dsl: some useless abbreviations, usually compressed (.dz) (unused).
 	"""
+
 	_NON_PRINTING_CHARS_PATTERN = r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]'
 
 	@staticmethod
@@ -37,9 +40,8 @@ class DSLReader(BaseReader):
 		text = text.replace('{·}', '')
 
 		# Remove all non-printing characters
-		text = re.sub(DSLReader._NON_PRINTING_CHARS_PATTERN, '', text)
+		return re.sub(DSLReader._NON_PRINTING_CHARS_PATTERN, '', text)
 
-		return text
 
 	@staticmethod
 	def _clean_up_opening_whitespace(text: 'str') -> 'str':
@@ -50,7 +52,7 @@ class DSLReader(BaseReader):
 			elif line[0].isspace():
 				lines[i] = ' ' + line.lstrip()
 		return '\n'.join(lines)
-	
+
 	@staticmethod
 	def _clean_up(dsl_decompressed_path: 'str') -> 'None':
 		"""
@@ -97,7 +99,7 @@ class DSLReader(BaseReader):
 				 display_name: 'str',
 				 performs_cleanup: 'bool'=True, # Make sure your dsl is already cleaned up if it is False
 				 extract_resources: 'bool'=False,
-				 remove_resources_after_extraction: 'bool'=True) -> 'None': 
+				 remove_resources_after_extraction: 'bool'=True) -> 'None':
 		super().__init__(name, filename, display_name)
 		filename_no_extension, extension = os.path.splitext(filename)
 		is_compressed = extension == '.dz'
@@ -105,7 +107,8 @@ class DSLReader(BaseReader):
 		if not db_manager.dictionary_exists(self.name):
 			# !!! Back up before transformation
 			shutil.copyfile(filename, filename + '.old')
-			from .idzip.command import _compress as idzip_compress, _decompress as idzip_decompress
+			from .idzip.command import _compress as idzip_compress
+			from .idzip.command import _decompress as idzip_decompress
 			db_manager.drop_index()
 			if is_compressed:
 				idzip_decompress(filename, Options)
@@ -113,11 +116,11 @@ class DSLReader(BaseReader):
 				dsl_decompressed_path = filename_no_extension
 				if performs_cleanup:
 					self._clean_up(dsl_decompressed_path)
-				f = open(dsl_decompressed_path, 'r')
+				f = open(dsl_decompressed_path)
 			else:
 				if performs_cleanup:
 					self._clean_up(filename)
-				f = open(filename, 'r')
+				f = open(filename)
 			with f:
 				headwords = [] # buffer
 				while True:
@@ -185,7 +188,7 @@ class DSLReader(BaseReader):
 				resources_filename = filename_no_extension + '.files.zip'
 			else:
 				resources_filename = filename + '.files.zip'
-			
+
 			if os.path.isfile(resources_filename):
 				with ZipFile(resources_filename) as zip_file:
 					zip_file.extractall(os.path.join(self._CACHE_ROOT, self.name))
@@ -193,9 +196,7 @@ class DSLReader(BaseReader):
 					os.remove(resources_filename)
 
 	def _get_records(self, offset: 'int', size: 'int') -> 'str':
-		"""
-		Returns original DSL markup.
-		"""
+		"""Returns original DSL markup."""
 		assert os.path.splitext(self.filename)[1] == '.dz'
 		with idzip.open(self.filename) as f:
 			f.seek(offset)
@@ -209,7 +210,7 @@ class DSLReader(BaseReader):
 		for word, offset, length in locations:
 			# if word == entry:
 				records.append(self._get_records(offset, length))
-		
+
 		records = [self._converter.convert(record) for record in records]
 
 		return self._ARTICLE_SEPARATOR.join(records)
